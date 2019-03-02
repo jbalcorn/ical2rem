@@ -313,13 +313,20 @@ foreach $yearkey (sort keys %{$events} ) {
                 } else {
                     print " MSG %a ";
                 }
-                print "%\"$event->{'SUMMARY'}";
-                print(" at $event->{'LOCATION'}")
+                print "%\"", &quote($event->{'SUMMARY'});
+                print(" at ", &quote($event->{'LOCATION'}))
                     if ($do_location and $event->{'LOCATION'});
                 print "\%\"%\n";
             }
         }
     }
 }
+
+sub quote {
+    local($_) = @_;
+    s/\[/["["]/g;
+    return $_;
+}
+
 exit 0;
 #:vim set ft=perl ts=4 sts=4 expandtab :
