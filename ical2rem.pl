@@ -1,5 +1,4 @@
 #!/usr/bin/perl -w
-my $debug = 0;
 #
 # ical2rem.pl - 
 # Reads iCal files and outputs remind-compatible files.   Tested ONLY with
@@ -63,6 +62,7 @@ my $debug = 0;
  --todos, --no-todos   Process Todos? (Default: Yes)
  --heading             Define a priority for static entries
  --help		       Usage
+ --debug	       Enable debug output
  --man		       Complete man page
 
 Expects an ICAL stream on STDIN. Converts it to the format
@@ -112,6 +112,7 @@ my $DEFAULT_LEAD_TIME = 3;
 my $PROCESS_TODOS     = 1;
 my $HEADING           = "";
 my $help;
+my $debug;
 my $man;
 
 my $label = 'Calendar';
@@ -121,6 +122,7 @@ GetOptions (
 	"todos!"	  => \$PROCESS_TODOS,
 	"heading=s"	  => \$HEADING,
 	"help|?" 	  => \$help, 
+        "debug"           => \$debug,
 	"man" 	 	  => \$man
 );
 pod2usage(1) if $help;
