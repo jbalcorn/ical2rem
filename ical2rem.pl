@@ -58,6 +58,8 @@
 
  All options have reasonable defaults:
  --label	       Calendar name (Default: Calendar)
+ --start               Start of time period to parse (parsed by str2time)
+ --end                 End of time period to parse
  --lead-time	       Advance days to start reminders (Default: 3)
  --todos, --no-todos   Process Todos? (Default: Yes)
  --iso8601			   Use YYYY-MM-DD date format
@@ -105,6 +107,7 @@ the calendar entries.  See the file defs.rem from the remind distribution for mo
 
 use strict;
 use iCal::Parser;
+use Date::Parse;
 use DateTime;
 use Getopt::Long 2.24 qw':config auto_help';
 use Pod::Usage;
@@ -120,10 +123,14 @@ my $help;
 my $debug;
 my $man;
 my $iso8601;
+my $start;
+my $end;
 
 my $label = 'Calendar';
 GetOptions (
 	"label=s"     => \$label,
+        "start=s"     => \$start,
+        "end=s"       => \$end,
 	"lead-time=i" => \$DEFAULT_LEAD_TIME,
 	"todos!"	  => \$PROCESS_TODOS,
 	"iso8601!"        => \$iso8601,
@@ -148,17 +155,19 @@ while (<>) {
 	}
 }
 print STDERR "Read all calendars\n" if $debug;
-my $startdate = DateTime->new( year   => 2016,
-                       month  => 1,
-                       day    => 1,
-                       time_zone => 'US/Eastern',
-                     );
-my $oneyear = DateTime::Duration->new( years   => 1);
-my $enddate = DateTime->now + $oneyear;
+my(%parser_opts) = ("debug" => $debug);
+if ($start) {
+    my $t = str2time($start);
+    die "Invalid time $start\n" if (! $t);
+    $parser_opts{'start'} = DateTime->from_epoch(epoch => $t);
+}
+if ($end) {
+    my $t = str2time($end);
+    die "Invalid time $end\n" if (! $t);
+    $parser_opts{'end'} = DateTime->from_epoch(epoch => $t);
+}
 print STDERR "About to parse calendars\n" if $debug;
-my $parser = iCal::Parser->new('start' => $startdate,
-							'debug' => $debug
-								'end' => $enddate);
+my $parser = iCal::Parser->new(%parser_opts);
 my $hash = $parser->parse_strings(@calendars);
 print STDERR "Calendars parsed\n" if $debug;
 
