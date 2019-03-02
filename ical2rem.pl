@@ -150,7 +150,7 @@ my $oneyear = DateTime::Duration->new( years   => 1);
 my $enddate = DateTime->now + $oneyear;
 print STDERR "About to parse calendars\n" if $debug;
 my $parser = iCal::Parser->new('start' => $startdate,
-							'debug' => 0,
+							'debug' => $debug
 								'end' => $enddate);
 my $hash = $parser->parse_strings(@calendars);
 print STDERR "Calendars parsed\n" if $debug;
