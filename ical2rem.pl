@@ -63,6 +63,7 @@
  --lead-time	       Advance days to start reminders (Default: 3)
  --todos, --no-todos   Process Todos? (Default: Yes)
  --iso8601			   Use YYYY-MM-DD date format
+ --locations, --no-locations  Include location? (Default: Yes)
  --heading             Define a priority for static entries
  --help		       Usage
  --debug	       Enable debug output
@@ -82,6 +83,10 @@ the "--label" option.
 -head2 --iso8601
 
 Use YYYY-MM-DD date format in output instead of Mmm DD YYYY
+
+-head2 --locations, --no-locations
+
+Whether or not to include locations in events
 
 =head2 --lead-time 
 
@@ -123,6 +128,7 @@ my $help;
 my $debug;
 my $man;
 my $iso8601;
+my $do_location = 1;
 my $start;
 my $end;
 
@@ -134,6 +140,7 @@ GetOptions (
 	"lead-time=i" => \$DEFAULT_LEAD_TIME,
 	"todos!"	  => \$PROCESS_TODOS,
 	"iso8601!"        => \$iso8601,
+	"locations!"      => \$do_location,
 	"heading=s"	  => \$HEADING,
 	"help|?" 	  => \$help, 
         "debug"           => \$debug,
@@ -307,7 +314,8 @@ foreach $yearkey (sort keys %{$events} ) {
                     print " MSG %a ";
                 }
                 print "%\"$event->{'SUMMARY'}";
-                print " at $event->{'LOCATION'}" if $event->{'LOCATION'};
+                print(" at $event->{'LOCATION'}")
+                    if ($do_location and $event->{'LOCATION'});
                 print "\%\"%\n";
             }
         }
