@@ -60,6 +60,7 @@
  --label	       Calendar name (Default: Calendar)
  --lead-time	       Advance days to start reminders (Default: 3)
  --todos, --no-todos   Process Todos? (Default: Yes)
+ --iso8601			   Use YYYY-MM-DD date format
  --heading             Define a priority for static entries
  --help		       Usage
  --debug	       Enable debug output
@@ -75,6 +76,10 @@ used by the C<remind> script and prints it to STDOUT.
 The syntax generated includes a label for the calendar parsed.
 By default this is "Calendar". You can customize this with 
 the "--label" option.
+
+-head2 --iso8601
+
+Use YYYY-MM-DD date format in output instead of Mmm DD YYYY
 
 =head2 --lead-time 
 
@@ -114,12 +119,14 @@ my $HEADING           = "";
 my $help;
 my $debug;
 my $man;
+my $iso8601;
 
 my $label = 'Calendar';
 GetOptions (
 	"label=s"     => \$label,
 	"lead-time=i" => \$DEFAULT_LEAD_TIME,
 	"todos!"	  => \$PROCESS_TODOS,
+	"iso8601!"        => \$iso8601,
 	"heading=s"	  => \$HEADING,
 	"help|?" 	  => \$help, 
         "debug"           => \$debug,
@@ -276,7 +283,13 @@ foreach $yearkey (sort keys %{$events} ) {
                     $leadtime = "+".$DEFAULT_LEAD_TIME;
                 }
                 my $start = $event->{'DTSTART'};
-                print "REM ".$start->month_abbr." ".$start->day." ".$start->year." $leadtime ";
+                print "REM ";
+                if ($iso8601) {
+                    print $start->strftime("%F");
+                } else {
+                    print $start->month_abbr." ".$start->day." ".$start->year;
+                }
+                print " $leadtime ";
                 if ($start->hour > 0) { 
                     print " AT ";
                     print $start->strftime("%H:%M");
