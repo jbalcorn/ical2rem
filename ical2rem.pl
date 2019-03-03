@@ -82,11 +82,11 @@ The syntax generated includes a label for the calendar parsed.
 By default this is "Calendar". You can customize this with 
 the "--label" option.
 
--head2 --iso8601
+=head2 --iso8601
 
 Use YYYY-MM-DD date format in output instead of Mmm DD YYYY
 
--head2 --locations, --no-locations
+=head2 --locations, --no-locations
 
 Whether or not to include locations in events
 
