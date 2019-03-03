@@ -306,7 +306,7 @@ foreach $yearkey (sort keys %{$events} ) {
                     print $start->month_abbr." ".$start->day." ".$start->year;
                 }
                 print " $leadtime ";
-                if ($start->hour > 0) { 
+                if ($start->hour > 0 or $start->minute > 0) {
                     print " AT ";
                     print $start->strftime("%H:%M");
                     print " SCHED _sfun MSG %a %2 ";
