@@ -1,5 +1,4 @@
 #!/usr/bin/perl -w
-my $debug = 0;
 #
 # ical2rem.pl - 
 # Reads iCal files and outputs remind-compatible files.   Tested ONLY with
@@ -59,10 +58,17 @@ my $debug = 0;
 
  All options have reasonable defaults:
  --label	       Calendar name (Default: Calendar)
+ --start               Start of time period to parse (parsed by str2time)
+ --end                 End of time period to parse
  --lead-time	       Advance days to start reminders (Default: 3)
  --todos, --no-todos   Process Todos? (Default: Yes)
+ --iso8601			   Use YYYY-MM-DD date format
+ --locations, --no-locations  Include location? (Default: Yes)
+ --end-times, --no-end-times  Include event end times in reminder text
+                              (Default: No)
  --heading             Define a priority for static entries
  --help		       Usage
+ --debug	       Enable debug output
  --man		       Complete man page
 
 Expects an ICAL stream on STDIN. Converts it to the format
@@ -75,6 +81,14 @@ used by the C<remind> script and prints it to STDOUT.
 The syntax generated includes a label for the calendar parsed.
 By default this is "Calendar". You can customize this with 
 the "--label" option.
+
+=head2 --iso8601
+
+Use YYYY-MM-DD date format in output instead of Mmm DD YYYY
+
+=head2 --locations, --no-locations
+
+Whether or not to include locations in events
 
 =head2 --lead-time 
 
@@ -100,6 +114,7 @@ the calendar entries.  See the file defs.rem from the remind distribution for mo
 
 use strict;
 use iCal::Parser;
+use Date::Parse;
 use DateTime;
 use Getopt::Long 2.24 qw':config auto_help';
 use Pod::Usage;
@@ -112,17 +127,29 @@ my $DEFAULT_LEAD_TIME = 3;
 my $PROCESS_TODOS     = 1;
 my $HEADING           = "";
 my $help;
+my $debug;
 my $man;
+my $iso8601;
+my $do_location = 1;
+my $do_end_times;
+my $start;
+my $end;
 
 my $label = 'Calendar';
 GetOptions (
 	"label=s"     => \$label,
+        "start=s"     => \$start,
+        "end=s"       => \$end,
 	"lead-time=i" => \$DEFAULT_LEAD_TIME,
 	"todos!"	  => \$PROCESS_TODOS,
+	"iso8601!"        => \$iso8601,
+	"locations!"      => \$do_location,
+        "end-times!"      => \$do_end_times,
 	"heading=s"	  => \$HEADING,
 	"help|?" 	  => \$help, 
+        "debug"           => \$debug,
 	"man" 	 	  => \$man
-);
+) or pod2usage(1);
 pod2usage(1) if $help;
 pod2usage(-verbose => 2) if $man;
 
@@ -139,17 +166,19 @@ while (<>) {
 	}
 }
 print STDERR "Read all calendars\n" if $debug;
-my $startdate = DateTime->new( year   => 2016,
-                       month  => 1,
-                       day    => 1,
-                       time_zone => 'US/Eastern',
-                     );
-my $oneyear = DateTime::Duration->new( years   => 1);
-my $enddate = DateTime->now + $oneyear;
+my(%parser_opts) = ("debug" => $debug);
+if ($start) {
+    my $t = str2time($start);
+    die "Invalid time $start\n" if (! $t);
+    $parser_opts{'start'} = DateTime->from_epoch(epoch => $t);
+}
+if ($end) {
+    my $t = str2time($end);
+    die "Invalid time $end\n" if (! $t);
+    $parser_opts{'end'} = DateTime->from_epoch(epoch => $t);
+}
 print STDERR "About to parse calendars\n" if $debug;
-my $parser = iCal::Parser->new('start' => $startdate,
-							'debug' => 0,
-								'end' => $enddate);
+my $parser = iCal::Parser->new(%parser_opts);
 my $hash = $parser->parse_strings(@calendars);
 print STDERR "Calendars parsed\n" if $debug;
 
@@ -274,20 +303,66 @@ foreach $yearkey (sort keys %{$events} ) {
                     $leadtime = "+".$DEFAULT_LEAD_TIME;
                 }
                 my $start = $event->{'DTSTART'};
-                print "REM ".$start->month_abbr." ".$start->day." ".$start->year." $leadtime ";
-                if ($start->hour > 0) { 
+                my $end = $event->{'DTEND'};
+                my $duration = "";
+                if ($end and ($start->hour or $start->minute or $end->hour or $end->minute)) {
+                    # We need both an HH:MM version of the delta, to put in the
+                    # DURATION specifier, and a human-readable version of the
+                    # delta, to put in the message if the user requested it.
+                    my $seconds = $end->epoch - $start->epoch;
+                    my $minutes = int($seconds / 60);
+                    my $hours = int($minutes / 60);
+                    $minutes -= $hours * 60;
+                    $duration = sprintf("DURATION %d:%02d", $hours, $minutes);
+                }
+                print "REM ";
+                if ($iso8601) {
+                    print $start->strftime("%F");
+                } else {
+                    print $start->month_abbr." ".$start->day." ".$start->year;
+                }
+                print " $leadtime ";
+                if ($start->hour > 0 or $start->minute > 0) {
                     print " AT ";
                     print $start->strftime("%H:%M");
-                    print " SCHED _sfun MSG %a %2 ";
+                    print " SCHED _sfun ${duration} MSG %a %2 ";
                 } else {
-                    print " MSG %a ";
+                    print "${duration} MSG %a ";
                 }
-                print "%\"$event->{'SUMMARY'}";
-                print " at $event->{'LOCATION'}" if $event->{'LOCATION'};
+                print "%\"", &quote($event->{'SUMMARY'});
+                print(" at ", &quote($event->{'LOCATION'}))
+                    if ($do_location and $event->{'LOCATION'});
+                if ($do_end_times and ($start->hour or $start->minute or
+                                       $end->hour or $end->minute)) {
+                    my $start_date = $start->strftime("%F");
+                    my $start_time = $start->strftime("%k:%M");
+                    my $end_date = $end->strftime("%F");
+                    my $end_time = $end->strftime("%k:%M");
+                    # We don't want leading whitespace; some strftime's support
+                    # disabling the pdding in the format string, but not all,
+                    # so for maximum portability we do it ourselves.
+                    $start_time =~ s/^\s+//;
+                    $end_time =~ s/^\s+//;
+                    my(@pieces);
+                    if ($start_date ne $end_date) {
+                        push(@pieces, $end_date);
+                    }
+                    if ($start_time ne $end_time) {
+                        push(@pieces, $end_time);
+                    }
+                    print " (-", join(" ", @pieces), ")";
+                }
                 print "\%\"%\n";
             }
         }
     }
 }
+
+sub quote {
+    local($_) = @_;
+    s/\[/["["]/g;
+    return $_;
+}
+
 exit 0;
 #:vim set ft=perl ts=4 sts=4 expandtab :
