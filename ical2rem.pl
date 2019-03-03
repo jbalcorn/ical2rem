@@ -64,6 +64,8 @@
  --todos, --no-todos   Process Todos? (Default: Yes)
  --iso8601			   Use YYYY-MM-DD date format
  --locations, --no-locations  Include location? (Default: Yes)
+ --end-times, --no-end-times  Include event end times in reminder text
+                              (Default: No)
  --heading             Define a priority for static entries
  --help		       Usage
  --debug	       Enable debug output
@@ -129,6 +131,7 @@ my $debug;
 my $man;
 my $iso8601;
 my $do_location = 1;
+my $do_end_times;
 my $start;
 my $end;
 
@@ -141,6 +144,7 @@ GetOptions (
 	"todos!"	  => \$PROCESS_TODOS,
 	"iso8601!"        => \$iso8601,
 	"locations!"      => \$do_location,
+        "end-times!"      => \$do_end_times,
 	"heading=s"	  => \$HEADING,
 	"help|?" 	  => \$help, 
         "debug"           => \$debug,
@@ -328,6 +332,26 @@ foreach $yearkey (sort keys %{$events} ) {
                 print "%\"", &quote($event->{'SUMMARY'});
                 print(" at ", &quote($event->{'LOCATION'}))
                     if ($do_location and $event->{'LOCATION'});
+                if ($do_end_times and ($start->hour or $start->minute or
+                                       $end->hour or $end->minute)) {
+                    my $start_date = $start->strftime("%F");
+                    my $start_time = $start->strftime("%k:%M");
+                    my $end_date = $end->strftime("%F");
+                    my $end_time = $end->strftime("%k:%M");
+                    # We don't want leading whitespace; some strftime's support
+                    # disabling the pdding in the format string, but not all,
+                    # so for maximum portability we do it ourselves.
+                    $start_time =~ s/^\s+//;
+                    $end_time =~ s/^\s+//;
+                    my(@pieces);
+                    if ($start_date ne $end_date) {
+                        push(@pieces, $end_date);
+                    }
+                    if ($start_time ne $end_time) {
+                        push(@pieces, $end_time);
+                    }
+                    print " (-", join(" ", @pieces), ")";
+                }
                 print "\%\"%\n";
             }
         }
