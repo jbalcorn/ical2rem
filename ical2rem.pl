@@ -299,6 +299,18 @@ foreach $yearkey (sort keys %{$events} ) {
                     $leadtime = "+".$DEFAULT_LEAD_TIME;
                 }
                 my $start = $event->{'DTSTART'};
+                my $end = $event->{'DTEND'};
+                my $duration = "";
+                if ($end and ($start->hour or $start->minute or $end->hour or $end->minute)) {
+                    # We need both an HH:MM version of the delta, to put in the
+                    # DURATION specifier, and a human-readable version of the
+                    # delta, to put in the message if the user requested it.
+                    my $seconds = $end->epoch - $start->epoch;
+                    my $minutes = int($seconds / 60);
+                    my $hours = int($minutes / 60);
+                    $minutes -= $hours * 60;
+                    $duration = sprintf("DURATION %d:%02d", $hours, $minutes);
+                }
                 print "REM ";
                 if ($iso8601) {
                     print $start->strftime("%F");
@@ -309,9 +321,9 @@ foreach $yearkey (sort keys %{$events} ) {
                 if ($start->hour > 0 or $start->minute > 0) {
                     print " AT ";
                     print $start->strftime("%H:%M");
-                    print " SCHED _sfun MSG %a %2 ";
+                    print " SCHED _sfun ${duration} MSG %a %2 ";
                 } else {
-                    print " MSG %a ";
+                    print "${duration} MSG %a ";
                 }
                 print "%\"", &quote($event->{'SUMMARY'});
                 print(" at ", &quote($event->{'LOCATION'}))
