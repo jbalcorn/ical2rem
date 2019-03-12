@@ -332,6 +332,7 @@ foreach $yearkey (sort keys %{$events} ) {
                 print "%\"", &quote($event->{'SUMMARY'});
                 print(" at ", &quote($event->{'LOCATION'}))
                     if ($do_location and $event->{'LOCATION'});
+                print "\%\"";
                 if ($do_end_times and ($start->hour or $start->minute or
                                        $end->hour or $end->minute)) {
                     my $start_date = $start->strftime("%F");
@@ -352,7 +353,7 @@ foreach $yearkey (sort keys %{$events} ) {
                     }
                     print " (-", join(" ", @pieces), ")";
                 }
-                print "\%\"%\n";
+                print "%\n";
             }
         }
     }
