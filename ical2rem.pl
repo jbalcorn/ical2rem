@@ -313,21 +313,21 @@ foreach $yearkey (sort keys %{$events} ) {
                     my $minutes = int($seconds / 60);
                     my $hours = int($minutes / 60);
                     $minutes -= $hours * 60;
-                    $duration = sprintf("DURATION %d:%02d", $hours, $minutes);
+                    $duration = sprintf("DURATION %d:%02d ", $hours, $minutes);
                 }
                 print "REM ";
                 if ($iso8601) {
-                    print $start->strftime("%F");
+                    print $start->strftime("%F ");
                 } else {
-                    print $start->month_abbr." ".$start->day." ".$start->year;
+                    print $start->month_abbr." ".$start->day." ".$start->year." ";
                 }
-                print " $leadtime ";
-                if ($start->hour > 0 or $start->minute > 0) {
-                    print " AT ";
+                print "$leadtime ";
+                if ($duration or $start->hour > 0 or $start->minute > 0) {
+                    print "AT ";
                     print $start->strftime("%H:%M");
-                    print " SCHED _sfun ${duration} MSG %a %2 ";
+                    print " SCHED _sfun ${duration}MSG %a %2 ";
                 } else {
-                    print "${duration} MSG %a ";
+                    print "MSG %a ";
                 }
                 print "%\"", &quote($event->{'SUMMARY'});
                 print(" at ", &quote($event->{'LOCATION'}))
