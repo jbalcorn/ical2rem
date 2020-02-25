@@ -322,12 +322,12 @@ foreach $yearkey (sort keys %{$events} ) {
                     print $start->month_abbr." ".$start->day." ".$start->year;
                 }
                 print " $leadtime ";
-                if ($start->hour > 0 or $start->minute > 0) {
+                if ($duration or $start->hour > 0 or $start->minute > 0) {
                     print " AT ";
                     print $start->strftime("%H:%M");
                     print " SCHED _sfun ${duration} MSG %a %2 ";
                 } else {
-                    print "${duration} MSG %a ";
+                    print "MSG %a ";
                 }
                 print "%\"", &quote($event->{'SUMMARY'});
                 print(" at ", &quote($event->{'LOCATION'}))
