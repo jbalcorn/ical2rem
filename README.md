@@ -64,6 +64,9 @@ fset _sstd() coerce("STRING", _no_lz(_am_pm(sunset(today()))))
 MSG Sun is up today from [_srtd()] to [_sstd()].%"%"%
 ````
 ## Revision History
+### Version 0.7 2024-09-04
+  - ISSUE 8: New version of remind complains if _sfun isn't defined. Output a header
+	to define a function that does nothing if the function doesn't exist.
 ### Version 0.6 2019-03-01
   - Publish on GitHub and change license to MIT License
   - Add supporting files and explanation of how I use it

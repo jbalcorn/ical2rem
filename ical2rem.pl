@@ -252,6 +252,13 @@ sub _process_todos {
 #
 ######################################################################
 
+# Issue 8 https://github.com/jbalcorn/ical2rem/issues/8
+# Make sure there is a _sfun function declared in the reminder file.  We'll just make it do nothing here.
+print 'IF args("_sfun") < 1
+    FSET _sfun(x) choose(x,0)
+ENDIF
+';
+
 print _process_todos($hash->{'todos'}) if $PROCESS_TODOS;
 
 my ($leadtime, $yearkey, $monkey, $daykey,$uid,%eventsbyuid);
