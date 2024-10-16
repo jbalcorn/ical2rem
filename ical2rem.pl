@@ -32,34 +32,34 @@
 # version 0.6 2019-03-01
 #       - Updates to put on GitHub
 # version 0.5.2 2007-03-23
-# 	- BUG: leadtime for recurring events had a max of 4 instead of DEFAULT_LEAD_TIME
-#	- remove project-lead-time, since Category was a non-standard attribute
-#	- NOTE: There is a bug in iCal::Parser v1.14 that causes multiple calendars to
-#		fail if a calendar with recurring events is followed by a calendar with no
-#		recurring events.  This has been reported to the iCal::Parser author.
+#   - BUG: leadtime for recurring events had a max of 4 instead of DEFAULT_LEAD_TIME
+#   - remove project-lead-time, since Category was a non-standard attribute
+#   - NOTE: There is a bug in iCal::Parser v1.14 that causes multiple calendars to
+#       fail if a calendar with recurring events is followed by a calendar with no
+#       recurring events.  This has been reported to the iCal::Parser author.
 # version 0.5.1 2007-03-21
-#	- BUG: Handle multiple calendars on STDIN
-#	- add --heading option for priority on section headers
+#   - BUG: Handle multiple calendars on STDIN
+#   - add --heading option for priority on section headers
 # version 0.5 2007-03-21
-#	- Add more help options
-#	- --project-lead-time option
-#	- Supress printing of heading if there are no todos to print
+#   - Add more help options
+#   - --project-lead-time option
+#   - Supress printing of heading if there are no todos to print
 # version 0.4
-#	- Version 0.4 changes all written or inspired by, and thanks to Mark Stosberg
-#	- Change to GetOptions
-#	- Change to pipe
-#	- Add --label, --help options
-#	- Add Help Text
-#	- Change to subroutines
-#	- Efficiency and Cleanup
+#   - Version 0.4 changes all written or inspired by, and thanks to Mark Stosberg
+#   - Change to GetOptions
+#   - Change to pipe
+#   - Add --label, --help options
+#   - Add Help Text
+#   - Change to subroutines
+#   - Efficiency and Cleanup
 # version 0.3
-#	- Convert to GPL (Thanks to Mark Stosberg)
-#	- Add usage
+#   - Convert to GPL (Thanks to Mark Stosberg)
+#   - Add usage
 # version 0.2
-#	- add command line switches
-#	- add debug code
-#	- add SCHED _sfun keyword
-#	- fix typos
+#   - add command line switches
+#   - add debug code
+#   - add SCHED _sfun keyword
+#   - fix typos
 # version 0.1 - ALPHA CODE.  
 
 =head1 SYNOPSIS
@@ -67,19 +67,19 @@
  cat /path/to/file*.ics | ical2rem.pl > ~/.ical2rem
 
  All options have reasonable defaults:
- --label	       Calendar name (Default: Calendar)
+ --label           Calendar name (Default: Calendar)
  --start               Start of time period to parse (parsed by str2time)
  --end                 End of time period to parse
- --lead-time	       Advance days to start reminders (Default: 3)
+ --lead-time           Advance days to start reminders (Default: 3)
  --todos, --no-todos   Process Todos? (Default: Yes)
- --iso8601			   Use YYYY-MM-DD date format
+ --iso8601             Use YYYY-MM-DD date format
  --locations, --no-locations  Include location? (Default: Yes)
  --end-times, --no-end-times  Include event end times in reminder text
                               (Default: No)
  --heading             Define a priority for static entries
- --help		       Usage
- --debug	       Enable debug output
- --man		       Complete man page
+ --help            Usage
+ --debug           Enable debug output
+ --man             Complete man page
 
 Expects an ICAL stream on STDIN. Converts it to the format
 used by the C<remind> script and prints it to STDOUT. 
@@ -147,18 +147,18 @@ my $end;
 
 my $label = 'Calendar';
 GetOptions (
-	"label=s"     => \$label,
-        "start=s"     => \$start,
-        "end=s"       => \$end,
-	"lead-time=i" => \$DEFAULT_LEAD_TIME,
-	"todos!"	  => \$PROCESS_TODOS,
-	"iso8601!"        => \$iso8601,
-	"locations!"      => \$do_location,
-        "end-times!"      => \$do_end_times,
-	"heading=s"	  => \$HEADING,
-	"help|?" 	  => \$help, 
-        "debug"           => \$debug,
-	"man" 	 	  => \$man
+    "label=s"     => \$label,
+    "start=s"     => \$start,
+    "end=s"       => \$end,
+    "lead-time=i" => \$DEFAULT_LEAD_TIME,
+    "todos!"      => \$PROCESS_TODOS,
+    "iso8601!"    => \$iso8601,
+    "locations!"  => \$do_location,
+    "end-times!"  => \$do_end_times,
+    "heading=s"   => \$HEADING,
+    "help|?"      => \$help, 
+    "debug"       => \$debug,
+    "man"         => \$man
 ) or pod2usage(1);
 pod2usage(1) if $help;
 pod2usage(-verbose => 2) if $man;
@@ -169,11 +169,11 @@ my @calendars;
 my $in;
 
 while (<>) {
-	$in .= $_;
-	if (/END:VCALENDAR/) {
-		push(@calendars,$in);
-		$in = "";
-	}
+    $in .= $_;
+    if (/END:VCALENDAR/) {
+        push(@calendars,$in);
+        $in = "";
+    }
 }
 print STDERR "Read all calendars\n" if $debug;
 my(%parser_opts) = ("debug" => $debug);
@@ -202,57 +202,57 @@ print STDERR "Calendars parsed\n" if $debug;
 # expects 'todos' hashref from iCal::Parser is input
 # returns String to output
 sub _process_todos {
-	my $todos = shift; 
-	
-	my ($todo, @newtodos, $leadtime);
-	my $output = "";
+    my $todos = shift; 
+    
+    my ($todo, @newtodos, $leadtime);
+    my $output = "";
 
-	$output .=  'REM '.$HEADING.' MSG '.$label.' ToDos:%"%"%'."\n";
+    $output .=  'REM '.$HEADING.' MSG '.$label.' ToDos:%"%"%'."\n";
 
 # For sorting, make sure everything's got something
 #   To sort on.  
-	my $now = DateTime->now;
-	for $todo (@{$todos}) {
-		# remove completed items
-		if ($todo->{'STATUS'} && $todo->{'STATUS'} eq 'COMPLETED') {
-			next;
-		} elsif ($todo->{'DUE'}) {
-			# All we need is a due date, everything else is sugar
-			$todo->{'SORT'} = $todo->{'DUE'}->clone;
-		} elsif ($todo->{'DTSTART'}) {
-			# for sorting, sort on start date if there's no due date
-			$todo->{'SORT'} = $todo->{'DTSTART'}->clone;
-		} else {
-			# if there's no due or start date, just make it now.
-			$todo->{'SORT'} = $now;
-		}
-		push(@newtodos,$todo);
-	}
-	if (! (scalar @newtodos)) {
-		return "";
-	}
+    my $now = DateTime->now;
+    for $todo (@{$todos}) {
+        # remove completed items
+        if ($todo->{'STATUS'} && $todo->{'STATUS'} eq 'COMPLETED') {
+            next;
+        } elsif ($todo->{'DUE'}) {
+            # All we need is a due date, everything else is sugar
+            $todo->{'SORT'} = $todo->{'DUE'}->clone;
+        } elsif ($todo->{'DTSTART'}) {
+            # for sorting, sort on start date if there's no due date
+            $todo->{'SORT'} = $todo->{'DTSTART'}->clone;
+        } else {
+            # if there's no due or start date, just make it now.
+            $todo->{'SORT'} = $now;
+        }
+        push(@newtodos,$todo);
+    }
+    if (! (scalar @newtodos)) {
+        return "";
+    }
 # Now sort on the new Due dates and print them out.  
-	for $todo (sort { DateTime->compare($a->{'SORT'}, $b->{'SORT'}) } @newtodos) {
-		my $due = $todo->{'SORT'}->clone();
-		my $priority = "";
-		if (defined($todo->{'PRIORITY'})) {
-			if ($todo->{'PRIORITY'} == 1) {
-				$priority = "PRIORITY 1000";
-			} elsif ($todo->{'PRIORITY'} == 3) {
-				$priority = "PRIORITY 7500";
-			}
-		}
-		if (defined($todo->{'DTSTART'}) && defined($todo->{'DUE'})) {
-			# Lead time is duration of task + lead time
-			my $diff = ($todo->{'DUE'}->delta_days($todo->{'DTSTART'})->days())+$DEFAULT_LEAD_TIME;
-			$leadtime = "+".$diff;
-		} else {
-			$leadtime = "+".$DEFAULT_LEAD_TIME;
-		}
-		$output .=  "REM ".$due->month_abbr." ".$due->day." ".$due->year." $leadtime $priority MSG \%a $todo->{'SUMMARY'}\%\"\%\"\%\n";
-	}
-	$output .= 'REM '.$HEADING.' MSG %"%"%'."\n";
-	return $output;
+    for $todo (sort { DateTime->compare($a->{'SORT'}, $b->{'SORT'}) } @newtodos) {
+        my $due = $todo->{'SORT'}->clone();
+        my $priority = "";
+        if (defined($todo->{'PRIORITY'})) {
+            if ($todo->{'PRIORITY'} == 1) {
+                $priority = "PRIORITY 1000";
+            } elsif ($todo->{'PRIORITY'} == 3) {
+                $priority = "PRIORITY 7500";
+            }
+        }
+        if (defined($todo->{'DTSTART'}) && defined($todo->{'DUE'})) {
+            # Lead time is duration of task + lead time
+            my $diff = ($todo->{'DUE'}->delta_days($todo->{'DTSTART'})->days())+$DEFAULT_LEAD_TIME;
+            $leadtime = "+".$diff;
+        } else {
+            $leadtime = "+".$DEFAULT_LEAD_TIME;
+        }
+        $output .=  "REM ".$due->month_abbr." ".$due->day." ".$due->year." $leadtime $priority MSG \%a $todo->{'SUMMARY'}\%\"\%\"\%\n";
+    }
+    $output .= 'REM '.$HEADING.' MSG %"%"%'."\n";
+    return $output;
 }
 
 
@@ -284,7 +284,7 @@ foreach $yearkey (sort keys %{$events} ) {
                             DateTime->compare($dayevents->{$a}->{'DTSTART'}, $dayevents->{$b}->{'DTSTART'})    
                             } keys %{$dayevents}) {
                 my $event = $dayevents->{$uid};
-               if ($eventsbyuid{$uid}) {
+                if ($eventsbyuid{$uid}) {
                     my $curreventday = $event->{'DTSTART'}->clone;
                     $curreventday->truncate( to => 'day' );
                     $eventsbyuid{$uid}{$curreventday->epoch()} =1;
@@ -299,7 +299,6 @@ foreach $yearkey (sort keys %{$events} ) {
                     $curreventday->truncate( to => 'day' );
                     $eventsbyuid{$uid}{$curreventday->epoch()} =1;
                 }
-
             }
         }
     }
@@ -383,4 +382,4 @@ sub quote {
 }
 
 exit 0;
-#:vim set ft=perl ts=4 sts=4 expandtab :
+#:vim set ft=perl ts=4 sts=4 tabstop=4 expandtab :
