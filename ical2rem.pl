@@ -25,6 +25,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+# version 0.8 2024-10-16
+#   - Issue 9. Remove extra day notation on all day events.
 # version 0.7.1 2024-09-19
 #       - Made sure license statements were consistent
 # version 0.7 2024-09-04
@@ -293,6 +295,11 @@ foreach $yearkey (sort keys %{$events} ) {
                             $event->{'LEADTIME'} = $i;
                         }
                     }
+                    # Issue 9. Multi-day events have extra day with zero time. Mark this as the date not needed in reminders file so we can skip later
+                    #   Repeating multi-day events have the same uid so we need to mark each one.
+                    if ($event->{'DTSTART'} eq $event->{'DTEND'} and $event->{'DTEND'}->hour eq 0 and $event->{'DTEND'}->minute eq 0 and $event->{'DTEND'}->second eq 0) {
+                        $eventsbyuid{$uid}{$event->{'DTSTART'}->ymd} = 'rm';
+                    }
                 } else {
                     $eventsbyuid{$uid} = $event;
                     my $curreventday = $event->{'DTSTART'}->clone;
@@ -321,6 +328,10 @@ foreach $yearkey (sort keys %{$events} ) {
                 my $start = $event->{'DTSTART'};
                 my $end = $event->{'DTEND'};
                 my $duration = "";
+                # Issue 9. All Day events create an event that has zero length and DTSTART and DTEND at 00:00 on last day. Marked while handling multi-day events. Ignore these
+                if ($start eq $end and $eventsbyuid{$uid}{$start->ymd} and $eventsbyuid{$uid}{$start->ymd} eq 'rm') {
+                    next;
+                }
                 if ($end and ($start->hour or $start->minute or $end->hour or $end->minute)) {
                     # We need both an HH:MM version of the delta, to put in the
                     # DURATION specifier, and a human-readable version of the
