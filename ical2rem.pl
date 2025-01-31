@@ -287,11 +287,14 @@ foreach $yearkey (sort keys %{$events} ) {
                             } keys %{$dayevents}) {
                 my $event = $dayevents->{$uid};
                 if ($eventsbyuid{$uid}) {
-                    my $curreventday = $event->{'DTSTART'}->clone;
+                    print STDERR 'Existing UID Event: '.$event->{'DTSTART'}->ymd.':'.$event->{'SUMMARY'}."\n" if $debug;
+                    my $curreventday = $event->{'DTSTART'}->clone->set_time_zone( 'floating' );
                     $curreventday->truncate( to => 'day' );
                     $eventsbyuid{$uid}{$curreventday->epoch()} =1;
+                    print STDERR 'Added epoch '.$curreventday->epoch()."\n" if $debug;
                     for (my $i = 0;$i < $DEFAULT_LEAD_TIME && !defined($event->{'LEADTIME'});$i++) {
-                        if ($eventsbyuid{$uid}{$curreventday->subtract( days => $i+1 )->epoch() }) {
+                        if ($eventsbyuid{$uid}{$curreventday->subtract( days => 1 )->epoch() }) {
+                            print STDERR 'Adding Leadtime '.$i.' for day '.$curreventday."\n" if $debug;
                             $event->{'LEADTIME'} = $i;
                         }
                     }
@@ -302,9 +305,11 @@ foreach $yearkey (sort keys %{$events} ) {
                     }
                 } else {
                     $eventsbyuid{$uid} = $event;
-                    my $curreventday = $event->{'DTSTART'}->clone;
+                    my $curreventday = $event->{'DTSTART'}->clone->set_time_zone( 'floating' );
                     $curreventday->truncate( to => 'day' );
+                    print STDERR 'NEW UID Event: '.$event->{'DTSTART'}->ymd.':'.$event->{'SUMMARY'}." : ".$curreventday->ymd."\n" if $debug;
                     $eventsbyuid{$uid}{$curreventday->epoch()} =1;
+                    print STDERR 'Added epoch '.$curreventday->epoch()." ".$curreventday."\n" if $debug;
                 }
             }
         }
@@ -356,7 +361,12 @@ foreach $yearkey (sort keys %{$events} ) {
                 } else {
                     print "MSG %a ";
                 }
-                print "%\"", &quote($event->{'SUMMARY'});
+                if ($event->{'SUMMARY'}) {
+                    print "%\"", &quote($event->{'SUMMARY'});
+                }
+                else {
+                    print "%\"NO SUMMARY";
+                }
                 print(" at ", &quote($event->{'LOCATION'}))
                     if ($do_location and $event->{'LOCATION'});
                 print "\%\"";
