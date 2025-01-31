@@ -104,6 +104,8 @@ Args:
 ```
 
 ## Revision History
+### Version 0.8 2024-10-16
+  - ISSUE 10: All day events were appearing twice because they included 00:00. Check and remove those entries.
 ### Version 0.7 2024-09-04
   - ISSUE 8: New version of remind complains if _sfun isn't defined. Output a header
 	to define a function that does nothing if the function doesn't exist.
