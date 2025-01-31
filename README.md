@@ -63,6 +63,46 @@ fset _srtd() coerce("STRING", _no_lz(_am_pm(sunrise(today()))))
 fset _sstd() coerce("STRING", _no_lz(_am_pm(sunset(today()))))
 MSG Sun is up today from [_srtd()] to [_sstd()].%"%"%
 ````
+
+
+## Recurring Calendar entries and Remind
+
+There's been a long standing bug in ical2rem.pl - older recurring calendar entries were not detected by the script
+so the entries wouldn't be output to the remind file. I handled recurring entries and made sure only one would appear by manipulating
+the lead time, but the perl ICal parser wasn't handling older calendar entries.
+
+I discovered a python module that does exactly what I need.  It reads and calculates all the RRULE entries, and can output 
+calendar entries that occur within a specified time frame. I wrote the simple cal_upcoming_events.py script to
+read in the iCalendar file and output a simplified file that has all the calculated entries.  The UID isn't changed
+so my code that manipulates the lead time to make sure only one instance shows up in the remind output is still good.
+
+I call the new script on the original iCal file and pass the output to ical2rem.pl:
+
+```bash
+> bin/cal_upcoming_events.py -i calendars/full/justin.ics -o - -b 0 -a 30 | ical2rem.pl --lead-time 30 | remind -q -
+```
+
+Here's the docstring from the new script:
+```
+"""Ingests a icalendar and outputs all simplified calendar
+    that includes only events that occur within a span of time
+
+Uses the module recurring_ical_events to calculate any older
+    recurring events that have occurrences within the defined span of time.
+
+Args:
+    infile: The file to read
+
+    outfile: the file to write
+
+    before: number of days before today to start the span
+
+    after: number of days after today to start the span
+
+
+"""
+```
+
 ## Revision History
 ### Version 0.7 2024-09-04
   - ISSUE 8: New version of remind complains if _sfun isn't defined. Output a header
